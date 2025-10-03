@@ -1,23 +1,116 @@
-//STEAM API KEY: A96459A1855634B1B2F70F71933BF674
-
 //Imports
 import { useState, useEffect } from 'react';
 
+function GuessButtons({guessFunction}){
+     return(
+          <div>
+               <button className="higherButton" onClick={() => guessFunction("higher")}>Higher</button>
+               <button className="lowerButton" onClick={() => guessFunction("lower")}>Lower</button>
+          </div>
+     )
+}
+
+function RetryButton({retryFunction}){
+     return(
+          <div>
+               <button className="retryButton" onClick={() => retryFunction()}>Retry</button>
+          </div>
+     )
+}
+
 export default function Game(){
-     const[games, setGames] = useState([]); //Array of games between both users
+     const[games, setGames] = useState([]); //Array of games owned by user with name and playime
      const[current, setCurrent] = useState(null); //Current Game selected for guessing
+     const[guessTime, setGuessTime] = useState(0);//Random time picked based on game time to guess higher or lower from
      const[score, setScore] = useState(0);//Initilizes Score
      const [gameOver, setGameOver] = useState(false);//Tracks gameover
 
      useEffect(() => {
-          async function gameInit() { //On webpage load, pull steam API data (Hardcoded in users for now) and create a list of common games that both users own
-               //Calls steam API to pull individual user data then stores it as a javascript object in user1 and user2
+          async function gameInit() { //On webpage load, pull steam API data (Hardcoded in users for now)
                console.log("Fetching data");
-               const user1 = await fetch("http://localhost:3001/user1").then(r => r.json());
-               console.log("User 1 Data: ", user1);
+               const user = await fetch("http://localhost:3001/user1").then(r => r.json());
+               setGames(user.response.games);
+               setCurrent(user.response.games[Math.floor(Math.random() * user.response.games.length)]);//Initilizes first game on load
+     }
+          gameInit();
+     }, []/*Empty array stops infinite loop by insuring initlization is only ran once*/ );
+
+     useEffect(() => {
+          if(!current){return;}
+          console.log("Current Game: ", current);
+          if(!current){return;}
+          console.log("Playtime: " + current.playtime_forever);
+     }, [current]);//Runs when current game changes
+
+     useEffect(() =>{
+          if (games.length > 0) {
+          const next = games[Math.floor(Math.random() * games.length)]
+          setCurrent(next);
+          var offset = Math.floor((Math.random() * 121) - 60);
+          if(offset == 0){offset = 1;}
+          setGuessTime(next.playtime_forever + offset);
+          }
+     }, [score, games]);
+
+     function handleGuess(direction){
+               var prevScore = score;
+               if(direction == "lower"){
+                    if(current.playtime_forever < guessTime){
+                         setScore(prevScore+1);
+                    } else {
+                         setGameOver(1);
+                         setCurrent(null);
+                         setGuessTime(0);
+                    }
+               } else if(direction == "higher"){
+                    if(current.playtime_forever > guessTime){
+                         setScore(prevScore+1);
+                    } else {
+                         setGameOver(1);
+                         setCurrent(null);
+                         setGuessTime(0);
+                    }
+               }
           }
 
-          gameInit(); //Initilize Game
-          
-     }, []/*Empty array stops infinite loop by insuring initlization is only ran once*/ );
+     function retryFunction(){
+          setGameOver(false);
+          setScore(0);
+          setCurrent(games[Math.floor(Math.random() * games.length)]);
+     }
+
+     function GameContainer({current, guessTime, score, onGuess}){
+          return(
+               <div>
+                    <GuessButtons realTime={current?.playtime_forever ?? 0} guessTime={guessTime} score={score} guessFunction={onGuess}/>
+                    <div>Current Game Time:{Math.round((current?.playtime_forever/60)*10)/10 ?? "Loading..."}</div>
+                    <div>Current Game:{current?.name ?? "Loading..."}</div>
+                    <div>Current Guess Time:{Math.round((guessTime/60)*10)/10} Hours</div>
+                    <div>Score: {score}</div>
+                    <div>GAME OVER?: {gameOver}</div>
+               </div>
+          )
+     }
+
+     function GameOverScreen({retryFunction}){
+               return(
+                    <div>
+                         <RetryButton retryFunction={retryFunction}/>
+                    </div>
+               )
+          }
+
+     if(gameOver == false){ 
+          return(
+               <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>
+          )
+     } else if(gameOver == true){
+          return(
+               <div>
+                    <h1>GAME OVER!</h1>
+                    <GameOverScreen retryFunction={retryFunction}/>
+               </div>
+          )
+     }
 };
+
