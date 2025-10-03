@@ -18,22 +18,45 @@ function RetryButton({retryFunction}){
      )
 }
 
+function AccountBox({submitAccount}){
+     const [steamID, setSteamID] = useState("");
+
+     function handleChange(e){
+          setSteamID(e.target.value);
+     }
+
+     return(
+          <div>
+               <p>Enter your Steam Account Number here:</p>
+               <input className="accountBox" type="text" value={steamID} onChange={handleChange}></input>
+               <button onClick={() => submitAccount(steamID.trim())}>Submit</button>
+          </div>
+     )
+}
+
 export default function Game(){
+     const[account, setAccount] = useState(null);
      const[games, setGames] = useState([]); //Array of games owned by user with name and playime
      const[current, setCurrent] = useState(null); //Current Game selected for guessing
      const[guessTime, setGuessTime] = useState(0);//Random time picked based on game time to guess higher or lower from
      const[score, setScore] = useState(0);//Initilizes Score
      const [gameOver, setGameOver] = useState(false);//Tracks gameover
 
+     //TO DO: Input validation to ensure proper steam ID
+     function submitAccount(accountID){
+          setAccount(accountID);
+     }
+
      useEffect(() => {
           async function gameInit() { //On webpage load, pull steam API data (Hardcoded in users for now)
                console.log("Fetching data");
-               const user = await fetch("http://localhost:3001/user1").then(r => r.json());
+               console.log("Accout#: "+ account);
+               const user = await fetch(`http://localhost:3001/user1/${account}`).then(r => r.json());
                setGames(user.response.games);
                setCurrent(user.response.games[Math.floor(Math.random() * user.response.games.length)]);//Initilizes first game on load
      }
           gameInit();
-     }, []/*Empty array stops infinite loop by insuring initlization is only ran once*/ );
+     }, [account]/*Empty array stops infinite loop by insuring initlization is only ran once*/ );
 
      useEffect(() => {
           if(!current){return;}
@@ -99,18 +122,24 @@ export default function Game(){
                     </div>
                )
           }
-
-     if(gameOver == false){ 
+     if(account){
+          if(gameOver == false){ 
+               return(
+                    <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>
+               )
+          } else if(gameOver == true){
+               return(
+                    <div>
+                         <h1>GAME OVER!</h1>
+                         <GameOverScreen retryFunction={retryFunction}/>
+                    </div>
+               )
+          }
+     } else {
           return(
-               <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>
-          )
-     } else if(gameOver == true){
-          return(
-               <div>
-                    <h1>GAME OVER!</h1>
-                    <GameOverScreen retryFunction={retryFunction}/>
-               </div>
+               <AccountBox submitAccount={submitAccount}/>
           )
      }
+     
 };
 
