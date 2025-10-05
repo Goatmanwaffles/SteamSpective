@@ -35,28 +35,43 @@ function AccountBox({submitAccount}){
 }
 
 export default function Game(){
-     const[account, setAccount] = useState(null);
+     const[account, setAccount] = useState(null); //64 bit steam ID of user
      const[games, setGames] = useState([]); //Array of games owned by user with name and playime
      const[current, setCurrent] = useState(null); //Current Game selected for guessing
      const[guessTime, setGuessTime] = useState(0);//Random time picked based on game time to guess higher or lower from
      const[score, setScore] = useState(0);//Initilizes Score
-     const [gameOver, setGameOver] = useState(false);//Tracks gameover
+     const[gameOver, setGameOver] = useState(false);//Tracks gameover
+     const[validID, setValidID] = useState(false);
 
-     //TO DO: Input validation to ensure proper steam ID
-     function submitAccount(accountID){
-          setAccount(accountID);
+
+     async function submitAccount(accountID){
+          var isNum = /^\d+$/.test(accountID) //Checks if accountID only contains digits
+          if(isNum){
+               const account1 = await fetch(`http://localhost:3001/account/${accountID}`).then(r => r.json());
+               
+               if(account1.response.players[0].communityvisibilitystate == 3 && account1.response.players[0].profilestate == 1){
+                    console.log("VALID ACCOUNT");
+                    setAccount(account1.response.players[0].steamid);
+                    setValidID(true);
+               }
+          }
      }
 
      useEffect(() => {
-          async function gameInit() { //On webpage load, pull steam API data (Hardcoded in users for now)
+          async function gameInit() {
                console.log("Fetching data");
                console.log("Accout#: "+ account);
                const user = await fetch(`http://localhost:3001/user1/${account}`).then(r => r.json());
-               setGames(user.response.games);
-               setCurrent(user.response.games[Math.floor(Math.random() * user.response.games.length)]);//Initilizes first game on load
+               if(!validID){
+                    console.log("INVALID DATA REQUEST");
+               } else {
+                    console.log("User", user);
+                    setGames(user.response.games);
+                    setCurrent(user.response.games[Math.floor(Math.random() * user.response.games.length)]);//Initilizes first game on load
+               }
      }
           gameInit();
-     }, [account]/*Empty array stops infinite loop by insuring initlization is only ran once*/ );
+     }, [account]);
 
      useEffect(() => {
           if(!current){return;}
@@ -122,7 +137,7 @@ export default function Game(){
                     </div>
                )
           }
-     if(account){
+     if(account && games != null && validID){
           if(gameOver == false){ 
                return(
                     <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>

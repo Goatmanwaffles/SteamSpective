@@ -14,13 +14,39 @@ app.get("/user1/:steamID", async (req, res) => {
   try{
     const response = await fetch(apiUrl);
     if (!response.ok) {
-      throw new Error(`Steam API error: ${response.status}`);
+      return res.status(response.status).json({
+      error: `Steam API Error: ${response.status}`,
+      });
     }
 
     const data = await response.json();
     res.json(data);
+
   } catch (error) {
     console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+  
+});
+
+app.get("/account/:accountID", async (req, res) => {
+  const accountID = req.params.accountID;
+  const apiUrl = `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=A96459A1855634B1B2F70F71933BF674&steamids=${accountID}`;
+  console.log("Trying API Request: ", apiUrl);
+  try{
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      return res.status(response.status).json({
+      error: `Steam API Error: ${response.status}`,
+      });
+    }
+
+    const data = await response.json();
+    res.json(data);
+    
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
   }
   
 });
