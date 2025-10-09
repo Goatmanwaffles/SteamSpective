@@ -51,4 +51,25 @@ app.get("/account/:accountID", async (req, res) => {
   
 });
 
+app.get("/app/:appid", async(req, res) => {
+  const appid = req.params.appid;
+  const apiUrl = `https://store.steampowered.com/api/appdetails?appids=${appid}`;
+  console.log("Trying API Request: ", apiUrl);
+  try{
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      return res.status(response.status).json({
+      error: `Steam API Error: ${response.status}`,
+      });
+    }
+
+    const data = await response.json();
+    res.json(data);
+    
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 app.listen(3001, () => console.log("Proxy running on http://localhost:3001"));

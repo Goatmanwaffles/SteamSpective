@@ -1,11 +1,11 @@
 //Imports
 import { useState, useEffect } from 'react';
-
+import placeholder from './placeholder.jpg';
 function GuessButtons({guessFunction}){
      return(
-          <div>
-               <button className="higherButton" onClick={() => guessFunction("higher")}>Higher</button>
-               <button className="lowerButton" onClick={() => guessFunction("lower")}>Lower</button>
+          <div className="buttonContainer">
+               <button className="button button__guess button__guess--higher" onClick={() => guessFunction("higher")}>Higher</button>
+               <button className="button button__guess button__guess--lower" onClick={() => guessFunction("lower")}>Lower</button>
           </div>
      )
 }
@@ -26,10 +26,12 @@ function AccountBox({submitAccount}){
      }
 
      return(
-          <div>
-               <p>Enter your Steam Account Number here:</p>
+          <div className = "container__panel container__panel--main">
+               <h1 className='text text--title'>SteamSpective</h1>
+               <p className='text'>A Steam Hours based Higher or Lower game</p>
+               <p className='text'>Enter your Steam Account Number here:</p>
                <input className="accountBox" type="text" value={steamID} onChange={handleChange}></input>
-               <button onClick={() => submitAccount(steamID.trim())}>Submit</button>
+               <button className='button button--submit' onClick={() => submitAccount(steamID.trim())}>Submit</button>
           </div>
      )
 }
@@ -42,6 +44,7 @@ export default function Game(){
      const[score, setScore] = useState(0);//Initilizes Score
      const[gameOver, setGameOver] = useState(false);//Tracks gameover
      const[validID, setValidID] = useState(false);
+     const[currentPhoto, setCurrentPhoto] = useState(null);
 
 
      async function submitAccount(accountID){
@@ -76,17 +79,33 @@ export default function Game(){
      useEffect(() => {
           if(!current){return;}
           console.log("Current Game: ", current);
-          if(!current){return;}
           console.log("Playtime: " + current.playtime_forever);
+
+          async function fetchPhoto(){
+               const response = await fetch(`http://localhost:3001/app/${current.appid}`).then(r => r.json());
+               if(!response){setCurrentPhoto(placeholder); return;}
+               console.log("SteamStore Request: ", response);
+               const headerPhoto = response[current.appid]?.data?.header_image || placeholder;
+               if(headerPhoto){setCurrentPhoto(headerPhoto);} else {setCurrentPhoto(placeholder);}
+          }
+          fetchPhoto();
+
      }, [current]);//Runs when current game changes
 
      useEffect(() =>{
           if (games.length > 0) {
           const next = games[Math.floor(Math.random() * games.length)]
           setCurrent(next);
-          var offset = Math.floor((Math.random() * 121) - 60);
-          if(offset == 0){offset = 1;}
-          setGuessTime(next.playtime_forever + offset);
+
+          //Logic for Finding Guess Time
+          function genGuessTime(base){
+               const scale = Math.max(10, base * 0.15);
+               const rand = (Math.random() + Math.random() + Math.random()) / 3; 
+               const offset = Math.floor((rand * 2 - 1) * scale);
+               return Math.max(1, Math.round((base + offset)));
+          }
+          
+          setGuessTime(genGuessTime(next.playtime_forever));
           }
      }, [score, games]);
 
@@ -119,20 +138,26 @@ export default function Game(){
 
      function GameContainer({current, guessTime, score, onGuess}){
           return(
-               <div>
+               <div className = "container__panel container__panel--main">
+                    <h1 className="text text--title">SteamSpective</h1>
+                    <div><p className="text">Score: {score}</p></div>
+                    <div><p className="text">Current Game: {current?.name ?? "Loading..."}</p></div>
+                    <div><img src={currentPhoto} className="photo"></img></div>
+                    <div><p className="text">Current Guess Time: {Math.round((guessTime/60)*10)/10} Hours ({guessTime} minutes)</p></div>
+                    <div><p>Is your real time</p></div>
+                    <div className="buttonContainer">
                     <GuessButtons realTime={current?.playtime_forever ?? 0} guessTime={guessTime} score={score} guessFunction={onGuess}/>
-                    <div>Current Game Time:{Math.round((current?.playtime_forever/60)*10)/10 ?? "Loading..."}</div>
-                    <div>Current Game:{current?.name ?? "Loading..."}</div>
-                    <div>Current Guess Time:{Math.round((guessTime/60)*10)/10} Hours</div>
-                    <div>Score: {score}</div>
-                    <div>GAME OVER?: {gameOver}</div>
+                    </div>
                </div>
+
           )
      }
 
      function GameOverScreen({retryFunction}){
                return(
-                    <div>
+                    <div className = "container__panel container__panel--main">
+                         <h1>GAME OVER!</h1>
+                         <p clasName="text">Score: {score}</p>
                          <RetryButton retryFunction={retryFunction}/>
                     </div>
                )
@@ -140,19 +165,28 @@ export default function Game(){
      if(account && games != null && validID){
           if(gameOver == false){ 
                return(
-                    <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>
+                    <div className = "container">
+                         <div className = "container__panel container__panel--side"></div>
+                         <GameContainer current={current} score={score} onGuess={handleGuess} guessTime={guessTime}/>
+                         <div className = "container__panel container__panel--side"></div>
+                    </div>
                )
           } else if(gameOver == true){
                return(
-                    <div>
-                         <h1>GAME OVER!</h1>
+                    <div className="container">
+                         <div className = "container__panel container__panel--side"></div>
                          <GameOverScreen retryFunction={retryFunction}/>
+                         <div className = "container__panel container__panel--side"></div>
                     </div>
                )
           }
      } else {
           return(
-               <AccountBox submitAccount={submitAccount}/>
+               <div className="container">
+                    <div className = "container__panel container__panel--side"></div>
+                    <AccountBox submitAccount={submitAccount}/>
+                    <div className = "container__panel container__panel--side"></div>
+               </div>
           )
      }
      
