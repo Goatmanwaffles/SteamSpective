@@ -74,19 +74,20 @@ export default function Game(){
                }
      }
           gameInit();
-     }, [account]);
+     }, [account, validID]);
 
      useEffect(() => {
           if(!current){return;}
-          console.log("Current Game: ", current);
-          console.log("Playtime: " + current.playtime_forever);
-
           async function fetchPhoto(){
-               const response = await fetch(`http://localhost:3001/app/${current.appid}`).then(r => r.json());
-               if(!response){setCurrentPhoto(placeholder); return;}
-               console.log("SteamStore Request: ", response);
-               const headerPhoto = response[current.appid]?.data?.header_image || placeholder;
-               if(headerPhoto){setCurrentPhoto(headerPhoto);} else {setCurrentPhoto(placeholder);}
+               const headerPhotoStatus = await fetch(`http://localhost:3001/app/${current.appid}`);
+               const result = await headerPhotoStatus.json();
+               var headerPhoto = null;
+               if(result == 1){
+                    headerPhoto = `https://cdn.cloudflare.steamstatic.com/steam/apps/${current.appid}/header.jpg`;
+               } else {
+                    headerPhoto = placeholder;
+               }
+               setCurrentPhoto(headerPhoto);
           }
           fetchPhoto();
 

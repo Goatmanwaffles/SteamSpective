@@ -133,5 +133,8 @@ html, body{
 .photo{
   border:#171a21 solid 8px;
   border-radius: 24px;
-  margin-top: 25%;
+  align-items: center;
+  justify-content: center;
+  max-width: 35vw;
+
 }
