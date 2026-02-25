@@ -1,6 +1,7 @@
 // server.js
 //Simple Node.js server to request data from Steam
-require('dotenv').config({ path: '../.env.local'});
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '..', '.env.local') });
 const express = require("express");
 const fetch = require("node-fetch");
 const cors = require("cors");
