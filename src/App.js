@@ -1,6 +1,8 @@
 //Imports
 import { useState, useEffect } from 'react';
 import placeholder from './placeholder.jpg';
+const BASE_URL = process.env.REACT_APP_API_URL || "";
+
 function GuessButtons({guessFunction}){
      return(
           <div className="buttonContainer">
@@ -50,7 +52,7 @@ export default function Game(){
      async function submitAccount(accountID){
           var isNum = /^\d+$/.test(accountID) //Checks if accountID only contains digits
           if(isNum){
-               const account1 = await fetch(`http://localhost:3001/account/${accountID}`).then(r => r.json());
+               const account1 = await fetch(`${BASE_URL}/api/account/${accountID}`).then(r => r.json());
                
                if(account1.response.players[0].communityvisibilitystate == 3 && account1.response.players[0].profilestate == 1){
                     console.log("VALID ACCOUNT");
@@ -64,11 +66,10 @@ export default function Game(){
           async function gameInit() {
                console.log("Fetching data");
                console.log("Accout#: "+ account);
-               const user = await fetch(`http://localhost:3001/user1/${account}`).then(r => r.json());
+               const user = await fetch(`${BASE_URL}/api/user/${account}`).then(r => r.json());
                if(!validID){
                     console.log("INVALID DATA REQUEST");
                } else {
-                    console.log("User", user);
                     setGames(user.response.games);
                     setCurrent(user.response.games[Math.floor(Math.random() * user.response.games.length)]);//Initilizes first game on load
                }
@@ -79,7 +80,7 @@ export default function Game(){
      useEffect(() => {
           if(!current){return;}
           async function fetchPhoto(){
-               const headerPhotoStatus = await fetch(`http://localhost:3001/app/${current.appid}`);
+               const headerPhotoStatus = await fetch(`${BASE_URL}/api/app/${current.appid}`);
                const result = await headerPhotoStatus.json();
                var headerPhoto = null;
                if(result == 1){
